@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-11
+
 ### Added
 
 - First version, derived from gladys-translink (TransLink Vancouver).
@@ -22,3 +24,6 @@ the notes of the version's GitHub Release.
 - The closest stops and Bike Share stations suggested from the house location.
 - Stop search by name or number, in the stop list shipped with the image.
 - Dashboard widgets, scene triggers and scene actions (Gladys 5.1.0+).
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-ttc/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/LM1LC3N7/gladys-ttc/releases/tag/v0.1.0

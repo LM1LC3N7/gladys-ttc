@@ -1,6 +1,6 @@
 {
   "name": "gladys-ttc",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Gladys Assistant external integration for the TTC, Toronto: next departures, subway and LRT line status and Bike Share Toronto stations.",
   "type": "module",
