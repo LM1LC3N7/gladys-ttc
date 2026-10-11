@@ -24,7 +24,8 @@
 //   FeedEntity     id = 1, is_deleted = 2, trip_update = 3, alert = 5
 //   TripUpdate     trip = 1, stop_time_update = 2, timestamp = 4
 //   TripDescriptor trip_id = 1, start_date = 3, schedule_relationship = 4,
-//                  route_id = 5, direction_id = 6
+//                  route_id = 5, direction_id = 6, modified_trip = 7
+//   ModifiedTripSelector affected_trip_id = 2
 //   StopTimeUpdate stop_sequence = 1, arrival = 2, departure = 3, stop_id = 4,
 //                  schedule_relationship = 5
 //   StopTimeEvent  delay = 1, time = 2
@@ -278,6 +279,17 @@ function readTripDescriptor(reader) {
       trip.routeId = reader.readString();
     } else if (field === 6 && wire === WIRE.VARINT) {
       trip.directionId = reader.readVarint();
+    } else if (field === 7 && wire === WIRE.LENGTH_DELIMITED) {
+      // A trip on a detour (trip modifications, ETS) is named by the trip it
+      // modifies, without a trip_id of its own.
+      const selector = reader.readMessage();
+      forEachField(selector, (selectorField, selectorWire) => {
+        if (selectorField === 2 && selectorWire === WIRE.LENGTH_DELIMITED) {
+          trip.affectedTripId = selector.readString();
+          return true;
+        }
+        return false;
+      });
     } else {
       return false;
     }
@@ -373,7 +385,7 @@ export function decodeTripUpdates(buffer, watchedStopIds) {
         stopTimes.push({
           stopId: update.stopId,
           routeId: tripUpdate.trip.routeId,
-          tripId: tripUpdate.trip.tripId,
+          tripId: tripUpdate.trip.tripId ?? tripUpdate.trip.affectedTripId,
           directionId: tripUpdate.trip.directionId,
           tripScheduleRelationship: tripUpdate.trip.scheduleRelationship,
           scheduleRelationship: update.scheduleRelationship,

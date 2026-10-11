@@ -20,6 +20,7 @@
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { request } from './http.js';
 import {
+  GtfsRealtimeDecodeError,
   decodeTripUpdates,
   STOP_SCHEDULE_RELATIONSHIP,
   TRIP_SCHEDULE_RELATIONSHIP,
@@ -150,7 +151,14 @@ async function get(config, url, feed, accept) {
  * @returns {Promise<Uint8Array>}
  */
 export async function readFeed(config, url, feed) {
-  const response = await get(config, url, feed, 'application/x-protobuf');
+  // ETS answers 406 to a strict application/x-protobuf: its feeds are served
+  // as application/protocol-buffer.
+  const response = await get(
+    config,
+    url,
+    feed,
+    'application/x-protobuf, application/octet-stream;q=0.9, */*;q=0.8',
+  );
   return new Uint8Array(await response.arrayBuffer());
 }
 
@@ -242,13 +250,25 @@ function watchedStopIds(stops) {
 }
 
 /**
+ * How long the last good read of the feed stands in for a feed served cut
+ * short or empty. The Calgary open data portal publishes such a file for 30 s
+ * to a minute or more, now and then (2026-10), while it rewrites it; the times
+ * of the feed are absolute, so a reading of a few minutes still gives the
+ * right waits.
+ */
+export const STALE_FEED_MAX_MS = 5 * 60_000;
+
+/**
  * Read and decode the network feed for every watched stop.
  * @param {ReturnType<import('../config.js').normalizeConfig>} config
  * @param {{ id: string }[]} stops
  */
 async function readTripUpdates(config, stops) {
-  const buffer = await readFeed(config, NETWORK.realtime.tripUpdatesUrl, 'TripUpdates');
   const stopIds = watchedStopIds(stops);
+  const buffer = await readFeed(config, NETWORK.realtime.tripUpdatesUrl, 'TripUpdates');
+  // An empty body decodes as a feed without any trip: every board would go
+  // blank.
+  if (buffer.length === 0) throw new GtfsRealtimeDecodeError('empty feed');
   const decoded = decodeTripUpdates(buffer, stopIds);
   logger.debug(
     `TripUpdates: ${buffer.length} bytes, ${decoded.stopTimes.length} stop time(s) ` +
@@ -285,6 +305,19 @@ export async function getTripUpdates(
       feedCache = { at: now, key, ...decoded };
       return feedCache;
     })
+    .catch((err) => {
+      const lastGood = feedCache?.key === key ? feedCache : null;
+      if (
+        err instanceof GtfsRealtimeDecodeError &&
+        lastGood &&
+        now - lastGood.at < STALE_FEED_MAX_MS
+      ) {
+        // The cache keeps its age: the next poll reads the feed again.
+        logger.debug(`TripUpdates: ${err.message}, the last good read stands in`);
+        return lastGood;
+      }
+      throw err;
+    })
     .finally(() => {
       if (feedInFlight?.promise === promise) {
         feedInFlight = null;
@@ -314,7 +347,14 @@ export async function getTripUpdates(
  */
 export function departuresFromFeed(feed, stop, nowSeconds) {
   const ids = new Set(stopByCode(stop.id)?.ids ?? []);
-  const trips = knownStop(stop.id)?.trips;
+  const known = knownStop(stop.id);
+  const trips = known?.trips;
+  // A trip Transitous has not listed (later than the departures it gave)
+  // still has its direction when its route goes one way only at the stop.
+  const onlyHeadsign = (route) => {
+    const headsigns = known?.routes?.find((entry) => entry.route === route)?.headsigns ?? [];
+    return headsigns.length === 1 ? headsigns[0] : '';
+  };
   const departures = [];
   for (const stopTime of feed.stopTimes) {
     if (!ids.has(stopTime.stopId)) continue;
@@ -330,10 +370,21 @@ export function departuresFromFeed(feed, stop, nowSeconds) {
       logger.warn('The real-time feed names no route for some trips: they show without a route.');
     }
     if (stop.routes.length > 0 && !stop.routes.includes(normalizeRoute(route))) continue;
+    // A trip on a detour may come twice (ETS): as itself, and as the trip
+    // modified, without a route. One departure, the one naming its route.
+    const twin = departures.find(
+      (departure) => stopTime.tripId && departure.tripId === stopTime.tripId,
+    );
+    if (twin) {
+      if (!twin.route && route) twin.route = route;
+      continue;
+    }
     departures.push({
       route,
       // A feed naming the direction (NextBus) is the freshest word on it.
-      headsign: stopTime.headsign ? tidyHeadsign(stopTime.headsign, route) : (seen?.headsign ?? ''),
+      headsign: stopTime.headsign
+        ? tidyHeadsign(stopTime.headsign, route)
+        : seen?.headsign || onlyHeadsign(route),
       tripId: stopTime.tripId,
       directionId: stopTime.directionId,
       time: event.time,

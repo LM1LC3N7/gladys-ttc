@@ -60,6 +60,11 @@ function tripDescriptor(trip) {
     ...varintField(4, trip.scheduleRelationship),
     ...stringField(5, trip.routeId),
     ...varintField(6, trip.directionId),
+    // A trip on a detour (trip modifications): ModifiedTripSelector, its
+    // affected_trip_id = 2.
+    ...(trip.affectedTripId === undefined
+      ? []
+      : bytesField(7, stringField(2, trip.affectedTripId))),
   ];
 }
 

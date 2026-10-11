@@ -186,6 +186,25 @@ export function buildStops(rows, stopName, scheduleOnly = new Set()) {
 }
 
 /**
+ * The route table: route_id → label, plus the short name → label when no
+ * route_id takes it. Calgary Transit versions its route_ids ("201-20786",
+ * "201-20801" are the Red Line of two service periods) while its real-time
+ * feeds name the route by its short name ("201").
+ * @param {Record<string, string>[]} rows routes.txt
+ * @returns {Record<string, string>}
+ */
+export function buildRoutes(rows) {
+  const routes = new Map(rows.map((route) => [route.route_id, routeLabel(route)]));
+  for (const route of rows) {
+    const short = route.route_short_name ?? '';
+    if (short && !routes.has(short)) routes.set(short, routeLabel(route));
+  }
+  return Object.fromEntries(
+    [...routes].sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })),
+  );
+}
+
+/**
  * The stop_ids served by the trips of some routes. stop_times.txt is the big
  * file of a GTFS (200 MB at the TTC): it is scanned line by line rather than
  * parsed into objects, which would take gigabytes. Its fields are never
@@ -234,12 +253,11 @@ async function main() {
         NETWORK.gtfs.scheduleOnlyRoutes,
       )
     : new Set();
-  const stops = buildStops(read('stops.txt'), stopName, scheduleOnly);
-  const routes = Object.fromEntries(
-    read('routes.txt')
-      .map((route) => [route.route_id, routeLabel(route)])
-      .sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })),
-  );
+  // A regional feed (ETS) also lists the stops of its neighbours: only the
+  // operator's own are kept.
+  const keepStop = NETWORK.gtfs.keepStop ?? (() => true);
+  const stops = buildStops(read('stops.txt').filter(keepStop), stopName, scheduleOnly);
+  const routes = buildRoutes(read('routes.txt'));
 
   mkdirSync('gtfs', { recursive: true });
   // One stop per line: the diff of a regeneration then reads stop by stop.

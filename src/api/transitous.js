@@ -95,6 +95,15 @@ export function tidyHeadsign(headsign, route) {
   // destination: "East - 114 Queens Quay East towards Carlaw".
   const towards = /\btowards\s+(.+)$/i.exec(value);
   if (towards) value = towards[1];
+  // Calgary Transit writes its headsigns in capitals, "RICHMOND RD SW": they
+  // read better as "Richmond Rd SW" (the city quadrants stay in capitals).
+  // Opt-in: elsewhere a headsign in capitals is an acronym, "UBC".
+  if (NETWORK.titleCaseHeadsigns && !/[a-z]/.test(value)) {
+    value = value
+      .toLowerCase()
+      .replace(/(^|[\s/(-])\p{L}/gu, (letter) => letter.toUpperCase())
+      .replace(/\b(Nw|Ne|Sw|Se)\b/g, (quadrant) => quadrant.toUpperCase());
+  }
   return value.replace(/^to\s+/i, '').trim() || String(headsign ?? '').trim();
 }
 

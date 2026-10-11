@@ -153,7 +153,12 @@ export async function fetchLineStatus(config, { now = Date.now() } = {}) {
   const feed = lineAlerts
     ? lineAlerts.parse(await readJson(config, lineAlerts.url, 'Alerts'))
     : decodeAlerts(await readFeed(config, NETWORK.realtime.alertsUrl, 'Alerts'));
-  const status = parseAlerts(feed, { language: config.language, now });
+  // Calgary Transit writes the effect and the title of its alerts in HTML.
+  const { tidyAlerts } = NETWORK.realtime;
+  const status = parseAlerts(tidyAlerts ? tidyAlerts(feed) : feed, {
+    language: config.language,
+    now,
+  });
   logger.debug(`Lines: ${status.lines.map((line) => `${line.id}=${line.status}`).join(', ')}`);
   return status;
 }
