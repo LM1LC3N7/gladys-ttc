@@ -1,0 +1,900 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "TTC Toronto",
+  "description": {
+    "en": "Next TTC departures in real time, subway and LRT status, Bike Share Toronto stations.",
+    "fr": "Prochains passages du TTC en temps réel, état du métro et du SLR, vélos Bike Share Toronto."
+  },
+  "version": "0.0.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-ttc:0.0.0",
+  "gladys_version": ">=5.1.0",
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-ttc/main/cover.png",
+  "categories": ["services"],
+  "transports": ["cloud"],
+  "location": true,
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Get started in 2 minutes",
+        "fr": "Démarrer en 2 minutes"
+      },
+      "description": {
+        "en": "1. Check that your house has an address in Gladys (Settings → Houses). 2. Save this page. 3. Open the “Discover” tab of this integration and press “Add” on the stops and Bike Share stations near your home. That's it: you get the next departures and the Bike Share bikes right away. The TTC real time and the line status come with it, without any key.",
+        "fr": "1. Vérifiez que votre maison a une adresse dans Gladys (Paramètres → Maisons). 2. Enregistrez cette page. 3. Ouvrez l’onglet « Découverte » de cette intégration et cliquez sur « Ajouter » sur les arrêts et stations Bike Share près de chez vous. C’est tout : vous avez tout de suite les prochains passages et les vélos Bike Share. Le temps réel TTC et l’état des lignes sont inclus, sans aucune clé."
+      },
+      "links": [
+        {
+          "url": "https://github.com/LM1LC3N7/gladys-ttc/blob/main/docs/fr.md",
+          "label": {
+            "en": "Step-by-step guide",
+            "fr": "Guide pas à pas"
+          }
+        },
+        {
+          "url": "https://transitous.org/sources/",
+          "label": {
+            "en": "Timetable data (Transitous)",
+            "fr": "Données des horaires (Transitous)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "nearby",
+      "type": "section",
+      "label": {
+        "en": "Near my home",
+        "fr": "Près de chez moi"
+      },
+      "description": {
+        "en": "How many of the closest stops (within 600 m) and Bike Share stations (within 1 km) are proposed in the “Discover” tab. 0 turns the suggestion off.",
+        "fr": "Combien d’arrêts (à moins de 600 m) et de stations Bike Share (à moins de 1 km) parmi les plus proches sont proposés dans l’onglet « Découverte ». 0 désactive la suggestion."
+      }
+    },
+    {
+      "key": "nearby_stops",
+      "type": "number",
+      "label": {
+        "en": "Stops near my home",
+        "fr": "Arrêts près de chez moi"
+      },
+      "required": false,
+      "default": 3,
+      "min": 0,
+      "max": 8
+    },
+    {
+      "key": "nearby_bike_stations",
+      "type": "number",
+      "label": {
+        "en": "Bike Share stations near my home",
+        "fr": "Stations Bike Share près de chez moi"
+      },
+      "required": false,
+      "default": 2,
+      "min": 0,
+      "max": 8
+    },
+    {
+      "key": "lines",
+      "type": "section",
+      "label": {
+        "en": "Lines",
+        "fr": "Lignes"
+      },
+      "description": {
+        "en": "The status of the subway lines 1, 2 and 4 and the LRT lines 5 and 6, from the TTC service alerts.",
+        "fr": "L’état des lignes de métro 1, 2 et 4 et des lignes de SLR 5 et 6, d’après les alertes de service TTC."
+      }
+    },
+    {
+      "key": "watch_lines",
+      "type": "boolean",
+      "label": {
+        "en": "Watch the lines",
+        "fr": "Surveiller les lignes"
+      },
+      "description": {
+        "en": "Creates a \"TTC – Subway and LRT\" device with the status of the subway lines 1, 2 and 4 and the LRT lines 5 and 6.",
+        "fr": "Crée un appareil « TTC – Métro et SLR » avec l'état des lignes de métro 1, 2 et 4 et des lignes de SLR 5 et 6."
+      },
+      "required": false,
+      "default": true
+    },
+    {
+      "key": "watch",
+      "type": "section",
+      "label": {
+        "en": "Other stops and stations (optional)",
+        "fr": "Autres arrêts et stations (facultatif)"
+      },
+      "description": {
+        "en": "To watch a stop that is not near your home (work, school…): type its number, written on the stop sign, or find it with the “Find a stop” button at the bottom of this page.",
+        "fr": "Pour surveiller un arrêt qui n’est pas près de chez vous (travail, école…) : tapez son numéro, inscrit sur le panneau de l’arrêt, ou trouvez-le avec le bouton « Chercher un arrêt » en bas de cette page."
+      }
+    },
+    {
+      "key": "stops",
+      "type": "string",
+      "label": {
+        "en": "Stops",
+        "fr": "Arrêts"
+      },
+      "description": {
+        "en": "Stop numbers. Optional route filter after @ and custom name after : — e.g. \"13816, 10935@509:Bus to work\".",
+        "fr": "Numéros d'arrêt. Filtre de lignes optionnel après @ et nom personnalisé après : — ex. « 13816, 10935@509:Bus du travail »."
+      },
+      "required": false,
+      "placeholder": {
+        "en": "13816, 10935@509:Bus to work",
+        "fr": "13816, 10935@509:Bus du travail"
+      }
+    },
+    {
+      "key": "bike_stations",
+      "type": "string",
+      "label": {
+        "en": "Bike Share stations",
+        "fr": "Stations Bike Share"
+      },
+      "description": {
+        "en": "Bike Share station ids, with an optional custom name after : — e.g. \"7033:Station at home\".",
+        "fr": "Identifiants de stations Bike Share, avec un nom personnalisé optionnel après : — ex. « 7033:Station de la maison »."
+      },
+      "required": false,
+      "placeholder": {
+        "en": "7033:Station at home",
+        "fr": "7033:Station de la maison"
+      }
+    },
+    {
+      "key": "refresh",
+      "type": "section",
+      "label": {
+        "en": "Advanced",
+        "fr": "Avancé"
+      },
+      "description": {
+        "en": "The defaults suit almost everyone. One read of the real-time feed serves every stop.",
+        "fr": "Les valeurs par défaut conviennent à presque tout le monde. Une seule lecture du flux temps réel sert tous les arrêts."
+      }
+    },
+    {
+      "key": "departures_poll_frequency",
+      "type": "number",
+      "label": {
+        "en": "Departures refresh interval (s)",
+        "fr": "Rafraîchissement des passages (s)"
+      },
+      "description": {
+        "en": "How often the departures are refreshed, in seconds.",
+        "fr": "Fréquence de rafraîchissement des passages, en secondes."
+      },
+      "required": false,
+      "default": 60,
+      "min": 30,
+      "max": 3600
+    },
+    {
+      "key": "lines_poll_frequency",
+      "type": "number",
+      "label": {
+        "en": "Lines refresh interval (s)",
+        "fr": "Rafraîchissement des lignes (s)"
+      },
+      "description": {
+        "en": "How often the line status is refreshed, in seconds.",
+        "fr": "Fréquence de rafraîchissement de l'état des lignes, en secondes."
+      },
+      "required": false,
+      "default": 120,
+      "min": 30,
+      "max": 3600
+    },
+    {
+      "key": "bike_poll_frequency",
+      "type": "number",
+      "label": {
+        "en": "Bike Share refresh interval (s)",
+        "fr": "Rafraîchissement Bike Share (s)"
+      },
+      "description": {
+        "en": "How often the Bike Share stations are refreshed, in seconds.",
+        "fr": "Fréquence de rafraîchissement des stations Bike Share, en secondes."
+      },
+      "required": false,
+      "default": 120,
+      "min": 30,
+      "max": 3600
+    },
+    {
+      "key": "max_departures",
+      "type": "number",
+      "label": {
+        "en": "Departures per stop",
+        "fr": "Passages par arrêt"
+      },
+      "description": {
+        "en": "How many upcoming departures each stop device exposes as features.",
+        "fr": "Nombre de prochains passages exposés en fonctionnalités par arrêt."
+      },
+      "required": false,
+      "default": 3,
+      "min": 1,
+      "max": 5
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the values",
+        "fr": "Langue des valeurs"
+      },
+      "description": {
+        "en": "Language of the feature names and of the texts published.",
+        "fr": "Langue des noms de fonctionnalités et des textes publiés."
+      },
+      "required": false,
+      "default": "en",
+      "options": [
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français"
+          }
+        },
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "search_stops",
+      "label": {
+        "en": "Find a stop",
+        "fr": "Chercher un arrêt"
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "query",
+          "type": "string",
+          "label": {
+            "en": "Street, stop name or number",
+            "fr": "Rue, nom ou numéro de l’arrêt"
+          },
+          "placeholder": {
+            "en": "Union Station",
+            "fr": "Union Station"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "search_bike_stations",
+      "label": {
+        "en": "Find a Bike Share station",
+        "fr": "Chercher une station Bike Share"
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "query",
+          "type": "string",
+          "label": {
+            "en": "Station name",
+            "fr": "Nom de la station"
+          },
+          "placeholder": {
+            "en": "Union Station",
+            "fr": "Union Station"
+          },
+          "required": true
+        }
+      ]
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "departure_approaching",
+      "label": {
+        "en": "Departure approaching",
+        "fr": "Passage imminent"
+      },
+      "description": {
+        "en": "A departure of a watched stop is now less than the chosen number of minutes away.",
+        "fr": "Un passage d'un arrêt surveillé a lieu désormais dans moins du nombre de minutes choisi."
+      },
+      "fields": [
+        {
+          "key": "stop",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Stop",
+            "fr": "Arrêt"
+          },
+          "required": true
+        },
+        {
+          "key": "threshold",
+          "type": "select",
+          "label": {
+            "en": "Minutes before departure",
+            "fr": "Minutes avant le passage"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "en": "1 minute",
+                "fr": "1 minute"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "en": "2 minutes",
+                "fr": "2 minutes"
+              }
+            },
+            {
+              "value": "3",
+              "label": {
+                "en": "3 minutes",
+                "fr": "3 minutes"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "5 minutes",
+                "fr": "5 minutes"
+              }
+            },
+            {
+              "value": "10",
+              "label": {
+                "en": "10 minutes",
+                "fr": "10 minutes"
+              }
+            },
+            {
+              "value": "15",
+              "label": {
+                "en": "15 minutes",
+                "fr": "15 minutes"
+              }
+            }
+          ]
+        },
+        {
+          "key": "route",
+          "type": "string",
+          "label": {
+            "en": "Route (empty: any)",
+            "fr": "Ligne (vide : toutes)"
+          },
+          "placeholder": {
+            "en": "509",
+            "fr": "509"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "stop_name",
+          "type": "string",
+          "label": {
+            "en": "Stop",
+            "fr": "Arrêt"
+          }
+        },
+        {
+          "key": "route",
+          "type": "string",
+          "label": {
+            "en": "Route",
+            "fr": "Ligne"
+          }
+        },
+        {
+          "key": "minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes to wait",
+            "fr": "Minutes d'attente"
+          }
+        }
+      ]
+    },
+    {
+      "key": "line_status_changed",
+      "label": {
+        "en": "Line status changed",
+        "fr": "État d'une ligne modifié"
+      },
+      "description": {
+        "en": "A line was disrupted, got back to normal, or received a service notice.",
+        "fr": "Une ligne a été perturbée, est revenue à la normale ou a reçu un avis de service."
+      },
+      "fields": [
+        {
+          "key": "line",
+          "type": "multi_select",
+          "label": {
+            "en": "Lines",
+            "fr": "Lignes"
+          },
+          "options": [
+            {
+              "value": "line1",
+              "label": {
+                "en": "Line 1 Yonge-University",
+                "fr": "Ligne 1 Yonge-University"
+              }
+            },
+            {
+              "value": "line2",
+              "label": {
+                "en": "Line 2 Bloor-Danforth",
+                "fr": "Ligne 2 Bloor-Danforth"
+              }
+            },
+            {
+              "value": "line4",
+              "label": {
+                "en": "Line 4 Sheppard",
+                "fr": "Ligne 4 Sheppard"
+              }
+            },
+            {
+              "value": "line5",
+              "label": {
+                "en": "Line 5 Eglinton",
+                "fr": "Ligne 5 Eglinton"
+              }
+            },
+            {
+              "value": "line6",
+              "label": {
+                "en": "Line 6 Finch West",
+                "fr": "Ligne 6 Finch West"
+              }
+            }
+          ]
+        },
+        {
+          "key": "event",
+          "type": "multi_select",
+          "label": {
+            "en": "Events",
+            "fr": "Événements"
+          },
+          "options": [
+            {
+              "value": "disrupted",
+              "label": {
+                "en": "Disrupted",
+                "fr": "Perturbée"
+              }
+            },
+            {
+              "value": "restored",
+              "label": {
+                "en": "Back to normal",
+                "fr": "Retour à la normale"
+              }
+            },
+            {
+              "value": "notice",
+              "label": {
+                "en": "Service notice",
+                "fr": "Avis de service"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "line_name",
+          "type": "string",
+          "label": {
+            "en": "Line",
+            "fr": "Ligne"
+          }
+        },
+        {
+          "key": "event",
+          "type": "string",
+          "label": {
+            "en": "Event",
+            "fr": "Événement"
+          }
+        },
+        {
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "TTC message",
+            "fr": "Message TTC"
+          }
+        }
+      ]
+    },
+    {
+      "key": "bike_station_changed",
+      "label": {
+        "en": "Bike Share station changed",
+        "fr": "Station Bike Share modifiée"
+      },
+      "description": {
+        "en": "A watched Bike Share station ran out of bikes or docks, got some back, or changed service.",
+        "fr": "Une station Bike Share surveillée n'a plus de vélos ou de places, en retrouve, ou change de service."
+      },
+      "fields": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Bike Share station",
+            "fr": "Station Bike Share"
+          },
+          "required": true
+        },
+        {
+          "key": "event",
+          "type": "multi_select",
+          "label": {
+            "en": "Events",
+            "fr": "Événements"
+          },
+          "options": [
+            {
+              "value": "no_bike",
+              "label": {
+                "en": "No bike left",
+                "fr": "Plus aucun vélo"
+              }
+            },
+            {
+              "value": "bikes_back",
+              "label": {
+                "en": "Bikes back",
+                "fr": "Vélos de retour"
+              }
+            },
+            {
+              "value": "no_dock",
+              "label": {
+                "en": "No free dock",
+                "fr": "Plus aucune place"
+              }
+            },
+            {
+              "value": "docks_back",
+              "label": {
+                "en": "Docks back",
+                "fr": "Places de retour"
+              }
+            },
+            {
+              "value": "out_of_service",
+              "label": {
+                "en": "Out of service",
+                "fr": "Hors service"
+              }
+            },
+            {
+              "value": "back_in_service",
+              "label": {
+                "en": "Back in service",
+                "fr": "Remise en service"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "station_name",
+          "type": "string",
+          "label": {
+            "en": "Station",
+            "fr": "Station"
+          }
+        },
+        {
+          "key": "event",
+          "type": "string",
+          "label": {
+            "en": "Event",
+            "fr": "Événement"
+          }
+        },
+        {
+          "key": "bikes",
+          "type": "number",
+          "label": {
+            "en": "Bikes",
+            "fr": "Vélos"
+          }
+        },
+        {
+          "key": "electric_bikes",
+          "type": "number",
+          "label": {
+            "en": "Electric bikes",
+            "fr": "Vélos électriques"
+          }
+        },
+        {
+          "key": "docks",
+          "type": "number",
+          "label": {
+            "en": "Free docks",
+            "fr": "Places libres"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "get_next_departures",
+      "label": {
+        "en": "Read the next departures",
+        "fr": "Lire les prochains passages"
+      },
+      "description": {
+        "en": "Reads the next departures of a watched stop, now.",
+        "fr": "Lit maintenant les prochains passages d'un arrêt surveillé."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "stop",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Stop",
+            "fr": "Arrêt"
+          },
+          "required": true
+        },
+        {
+          "key": "route",
+          "type": "string",
+          "label": {
+            "en": "Route (empty: any)",
+            "fr": "Ligne (vide : toutes)"
+          },
+          "placeholder": {
+            "en": "509",
+            "fr": "509"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "route",
+          "type": "string",
+          "label": {
+            "en": "Route",
+            "fr": "Ligne"
+          }
+        },
+        {
+          "key": "minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes to wait",
+            "fr": "Minutes d'attente"
+          }
+        },
+        {
+          "key": "following_minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes to the following one",
+            "fr": "Minutes jusqu'au suivant"
+          }
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "label": {
+            "en": "Departure board",
+            "fr": "Tableau des passages"
+          }
+        },
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Upcoming departures",
+            "fr": "Passages à venir"
+          }
+        }
+      ]
+    },
+    {
+      "key": "get_line_status",
+      "label": {
+        "en": "Read a line status",
+        "fr": "Lire l'état d'une ligne"
+      },
+      "description": {
+        "en": "Reads the current status of one line, now.",
+        "fr": "Lit maintenant l'état actuel d'une ligne."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "line",
+          "type": "select",
+          "label": {
+            "en": "Line",
+            "fr": "Ligne"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "line1",
+              "label": {
+                "en": "Line 1 Yonge-University",
+                "fr": "Ligne 1 Yonge-University"
+              }
+            },
+            {
+              "value": "line2",
+              "label": {
+                "en": "Line 2 Bloor-Danforth",
+                "fr": "Ligne 2 Bloor-Danforth"
+              }
+            },
+            {
+              "value": "line4",
+              "label": {
+                "en": "Line 4 Sheppard",
+                "fr": "Ligne 4 Sheppard"
+              }
+            },
+            {
+              "value": "line5",
+              "label": {
+                "en": "Line 5 Eglinton",
+                "fr": "Ligne 5 Eglinton"
+              }
+            },
+            {
+              "value": "line6",
+              "label": {
+                "en": "Line 6 Finch West",
+                "fr": "Ligne 6 Finch West"
+              }
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "key": "line_name",
+          "type": "string",
+          "label": {
+            "en": "Line",
+            "fr": "Ligne"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status code",
+            "fr": "Code d'état"
+          }
+        },
+        {
+          "key": "status_label",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "État"
+          }
+        },
+        {
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "TTC message",
+            "fr": "Message TTC"
+          }
+        },
+        {
+          "key": "normal",
+          "type": "boolean",
+          "label": {
+            "en": "Normal service",
+            "fr": "Service normal"
+          }
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "key": "departures",
+      "label": {
+        "en": "TTC departures",
+        "fr": "Passages TTC"
+      },
+      "description": {
+        "en": "The next departures of a watched stop.",
+        "fr": "Les prochains passages d'un arrêt surveillé."
+      },
+      "icon": "clock",
+      "settings": [
+        {
+          "key": "stop",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Stop",
+            "fr": "Arrêt"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "line_status",
+      "label": {
+        "en": "TTC line status",
+        "fr": "État des lignes TTC"
+      },
+      "description": {
+        "en": "The status of the Subway and LRT lines, with the TTC alerts.",
+        "fr": "L'état des lignes (Métro et SLR), avec les alertes TTC."
+      },
+      "icon": "activity"
+    },
+    {
+      "key": "bike_station",
+      "label": {
+        "en": "Bike Share station",
+        "fr": "Station Bike Share"
+      },
+      "description": {
+        "en": "Bikes, e-bikes and free docks of a watched Bike Share station.",
+        "fr": "Vélos, vélos électriques et places libres d'une station Bike Share surveillée."
+      },
+      "icon": "map-pin",
+      "settings": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Bike Share station",
+            "fr": "Station Bike Share"
+          },
+          "required": true
+        }
+      ]
+    }
+  ]
+}
