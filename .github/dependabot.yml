@@ -3,7 +3,10 @@
 #
 #   - npm, monthly: the Gladys SDK first of all (new device categories and
 #     features arrive through it); the development tools share one PR;
-#   - GitHub Actions, monthly, grouped in one PR.
+#   - GitHub Actions, monthly, all in one PR.
+#
+# Monthly rather than weekly: every update pull request runs the CI, and the
+# GitHub Actions minutes are counted.
 #
 # The Docker base image is left out on purpose: `node:24-alpine` is a moving
 # tag, pulled fresh by every release build (latest Node 24 and Alpine patches),
@@ -15,8 +18,6 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      # Monthly rather than weekly: every update pull request runs the CI, and
-      # the GitHub Actions minutes are counted.
       interval: monthly
     groups:
       dev-dependencies:
@@ -26,8 +27,6 @@ updates:
     directory: /
     schedule:
       interval: monthly
-    # One pull request for all the actions: each one runs the CI, and a
-    # month's worth of bumps landed as five separate PRs the first time.
     groups:
       github-actions:
         patterns:

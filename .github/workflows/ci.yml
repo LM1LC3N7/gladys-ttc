@@ -1,10 +1,14 @@
 # -----------------------------------------------------------------------------
 # Continuous integration: runs on every push and every pull request.
 #
-# Three gates (inherited from the official Gladys integration template):
+# Four gates:
 #   1. Prettier  -> consistent formatting (no style debates in reviews);
 #   2. ESLint    -> catch real mistakes (undefined vars, dead code, ...);
-#   3. Tests     -> `node --test`, the built-in runner (no extra dependency).
+#   3. Tests     -> `node --test`, the built-in runner (no network);
+#   4. npm audit -> known vulnerabilities of the production dependencies.
+#
+# The GitHub Actions quota is limited: if every job fails in under 2 seconds,
+# the quota is exhausted, it is not a bug.
 #
 # They run on Node 22 (the oldest version `engines` accepts) and Node 24 (the
 # one the Docker image ships with, see the Dockerfile). The image is built too
@@ -59,6 +63,9 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Audit the production dependencies
+        run: npm audit --omit=dev --audit-level=moderate
 
   docker:
     runs-on: ubuntu-latest
