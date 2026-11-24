@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-24
+
 ### Changed
 
 - Integration SDK 0.16 (no change for the devices).
@@ -39,6 +41,7 @@ the notes of the version's GitHub Release.
 - Stop search by name or number, in the stop list shipped with the image.
 - Dashboard widgets, scene triggers and scene actions (Gladys 5.1.0+).
 
-[Unreleased]: https://github.com/LM1LC3N7/gladys-ttc/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/LM1LC3N7/gladys-ttc/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/LM1LC3N7/gladys-ttc/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/LM1LC3N7/gladys-ttc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/LM1LC3N7/gladys-ttc/releases/tag/v0.1.0
