@@ -12,6 +12,7 @@ the notes of the version's GitHub Release.
 
 ### Changed
 
+- Integration SDK 0.16 (no change for the devices).
 - Declared for Canada only (`countries: ["CA"]`): the Gladys catalog of an
   instance located elsewhere no longer lists it in its browse views (the
   search still finds it). Requires Gladys 5.3.0 or later.

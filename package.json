@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test",
+    "test": "node --test --test-timeout=60000",
     "update-stops": "node scripts/update-stops.mjs",
     "audit": "npm audit --omit=dev"
   },
@@ -18,7 +18,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@gladysassistant/integration-sdk": "^0.15.0"
+    "@gladysassistant/integration-sdk": "^0.16.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
